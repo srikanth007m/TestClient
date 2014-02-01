@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">"测试客户端"</string>
+    <string name="title_online">"在线设备"</string>
+    <string name="title_all">"所有设备"</string>
+
+</resources>

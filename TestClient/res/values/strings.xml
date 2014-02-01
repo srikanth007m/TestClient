@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Test Client</string>
+    <string name="title_online">Online devices</string>
+    <string name="title_all">All devices</string>
+
+</resources>
