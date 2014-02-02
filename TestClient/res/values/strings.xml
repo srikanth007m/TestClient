@@ -3,6 +3,14 @@
 
     <string name="app_name">Test Client</string>
     <string name="title_online">Online devices</string>
+    <string name="title_offline">Offline devices</string>
     <string name="title_all">All devices</string>
+    <string name="long_press_select">Long press to start selection</string>
+    <string name="select_items">Select Items</string>
+    <plurals name="selects">
+        <item quantity="one">One item selected</item>
+        <item quantity="other">%d items selected</item>
+    </plurals>
+    <string name="my_task">My task</string>
 
 </resources>

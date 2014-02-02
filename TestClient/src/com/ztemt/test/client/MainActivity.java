@@ -1,12 +1,12 @@
 package com.ztemt.test.client;
 
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarActivity;
 import android.widget.ArrayAdapter;
 
-public class MainActivity extends ActionBarActivity implements
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockFragmentActivity;
+
+public class MainActivity extends SherlockFragmentActivity implements
         ActionBar.OnNavigationListener {
 
     /**
@@ -32,6 +32,7 @@ public class MainActivity extends ActionBarActivity implements
                         android.R.layout.simple_list_item_1,
                         android.R.id.text1, new String[] {
                                 getString(R.string.title_online),
+                                getString(R.string.title_offline),
                                 getString(R.string.title_all) }), this);
     }
 
@@ -55,12 +56,12 @@ public class MainActivity extends ActionBarActivity implements
     public boolean onNavigationItemSelected(int position, long id) {
         // When the given dropdown item is selected, show its contents in the
         // container view.
-        Fragment fragment = new DevicesFragment();
+        DevicesFragment fragment = new DevicesFragment();
         Bundle args = new Bundle();
-        args.putInt(DevicesFragment.ARG_SECTION_NUMBER, position + 1);
+        args.putInt(DevicesFragment.ARG_SECTION_NUMBER, position);
         fragment.setArguments(args);
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.container, fragment).commit();
+        getSupportFragmentManager().beginTransaction().replace(R.id.container,
+                fragment).commit();
         return true;
     }
 }

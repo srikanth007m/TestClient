@@ -3,6 +3,13 @@
 
     <string name="app_name">"测试客户端"</string>
     <string name="title_online">"在线设备"</string>
+    <string name="title_offline">"离线设备"</string>
     <string name="title_all">"所有设备"</string>
+    <string name="long_press_select">"长按开始选择"</string>
+    <string name="select_items">"选择设备"</string>
+    <plurals name="selects">
+        <item quantity="other">"%d个设备被选择"</item>
+    </plurals>
+    <string name="my_task">"我的任务"</string>
 
 </resources>

@@ -14,9 +14,15 @@ public class DevicesAdapter extends BaseAdapter {
 
     private Context mContext;
     private List<Device> mDevices = new ArrayList<Device>();
+    private int mState;
 
-    public DevicesAdapter(Context context) {
+    public static final int STATE_ONLINE  = 0;
+    public static final int STATE_OFFLINE = 1;
+    public static final int STATE_UNKNOWN = 2;
+
+    public DevicesAdapter(Context context, int state) {
         mContext = context;
+        mState = state;
     }
 
     @Override
@@ -57,17 +63,22 @@ public class DevicesAdapter extends BaseAdapter {
         mDevices.clear();
         for (MessageEntity entity : entities) {
             Device device = new Device();
-            device.deviceId = entity.getString("deviceId", "0");
-            device.platform = entity.getString("platform", "Unknown");
-            device.version = entity.getString("version", "");
-            device.model = entity.getString("model", "");
-            device.baseband = entity.getString("baseband", "");
-            device.build = entity.getString("build", "");
-            device.address = entity.getString("address", "");
-            device.user = entity.getString("user", "");
-            device.buildDate = entity.getString("buildDate", "");
-            device.ip = entity.getString("ip", "");
-            mDevices.add(device);
+            device.online = entity.getInt("online", 0) == 1;
+            if (mState == STATE_ONLINE && device.online
+                    || mState == STATE_OFFLINE && !device.online
+                    || mState == STATE_UNKNOWN) {
+                device.deviceId = entity.getString("deviceId", "0");
+                device.platform = entity.getString("platform", "Unknown");
+                device.version = entity.getString("version", "");
+                device.model = entity.getString("model", "");
+                device.baseband = entity.getString("baseband", "");
+                device.build = entity.getString("build", "");
+                device.address = entity.getString("address", "");
+                device.user = entity.getString("user", "");
+                device.buildDate = entity.getString("buildDate", "");
+                device.ip = entity.getString("ip", "");
+                mDevices.add(device);
+            }
         }
         notifyDataSetChanged();
     }
@@ -83,6 +94,7 @@ public class DevicesAdapter extends BaseAdapter {
         String user;
         String buildDate;
         String ip;
+        boolean online;
     }
 
     private class ViewHolder {

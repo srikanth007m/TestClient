@@ -2,20 +2,30 @@ package com.ztemt.test.client;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIUtils;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HTTP;
 
-import de.tavendo.autobahn.WebSocketConnection;
-import de.tavendo.autobahn.WebSocketException;
-import de.tavendo.autobahn.WebSocketHandler;
+import android.content.Context;
 import android.os.Bundle;
-import android.support.v4.app.ListFragment;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class DevicesFragment extends ListFragment {
+import com.actionbarsherlock.app.SherlockListFragment;
+
+import de.tavendo.autobahn.WebSocketConnection;
+import de.tavendo.autobahn.WebSocketException;
+import de.tavendo.autobahn.WebSocketHandler;
+
+public class DevicesFragment extends SherlockListFragment {
 
     // The fragment argument representing the section number for this fragment
     public static final String ARG_SECTION_NUMBER = "section_number";
@@ -48,7 +58,12 @@ public class DevicesFragment extends ListFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mAdapter = new DevicesAdapter(getActivity());
+        int state = DevicesAdapter.STATE_UNKNOWN;
+        Bundle args = getArguments();
+        if (args != null && args.containsKey(ARG_SECTION_NUMBER)) {
+            state = args.getInt(ARG_SECTION_NUMBER);
+        }
+        mAdapter = new DevicesAdapter(getActivity(), state);
         setListAdapter(mAdapter);
         connect();
     }
@@ -74,14 +89,20 @@ public class DevicesFragment extends ListFragment {
     private void handleMessage(MessageEntity entity) {
         switch (entity.getType()) {
         case MessageConstants.MSG_REQUEST_DEVICES:
-            mAdapter.update(entity.getArray("online"));
+            mAdapter.update(entity.getArray("devices"));
             break;
         }
     }
 
     private String getWebSocketUrl() {
+        TelephonyManager tm = (TelephonyManager) getActivity().getSystemService(
+                Context.TELEPHONY_SERVICE);
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("deviceId", tm.getDeviceId()));
+        String param = URLEncodedUtils.format(params, HTTP.UTF_8);
         try {
-            URI uri = URIUtils.createURI("ws", getString(R.string.ws_host), 9001, "pull", null, null);
+            URI uri = URIUtils.createURI("ws", getString(R.string.ws_host), 9001,
+                    "push", param, null);
             return uri.toString();
         } catch (URISyntaxException e) {
             Log.e(TAG, "getWebSocketUrl", e);
@@ -109,8 +130,12 @@ public class DevicesFragment extends ListFragment {
 
     private void sendMessage(String text) {
         if (isConnected()) {
-            mConnection.sendTextMessage(text);
-            Log.d(TAG, "Send " + text);
+            try {
+                mConnection.sendTextMessage(text);
+                Log.d(TAG, "Send " + text);
+            } catch (NullPointerException e) {
+                Log.e(TAG, "WebSocketConnection internal error");
+            }
         }
     }
 
