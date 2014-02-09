@@ -62,9 +62,9 @@ public class DevicesFragment extends ListFragment {
         if (args != null && args.containsKey(ARG_SECTION_NUMBER)) {
             state = args.getInt(ARG_SECTION_NUMBER);
         }
-        mAdapter = new DevicesAdapter(getActivity(), state);
+        mAdapter = new DevicesAdapter(getActivity());
         setListAdapter(mAdapter);
-        connect();
+        //connect();
     }
 
     @Override
@@ -76,13 +76,13 @@ public class DevicesFragment extends ListFragment {
     @Override
     public void onResume() {
         super.onResume();
-        requestDevices();
+        //requestDevices();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        disconnect();
+        //disconnect();
     }
 
     @Override
@@ -137,38 +137,8 @@ public class DevicesFragment extends ListFragment {
         }
     }
 
-    private String getWebSocketUrl() {
-        TelephonyManager tm = (TelephonyManager) getActivity().getSystemService(
-                Context.TELEPHONY_SERVICE);
-        List<NameValuePair> params = new ArrayList<NameValuePair>();
-        params.add(new BasicNameValuePair("deviceId", tm.getDeviceId()));
-        String param = URLEncodedUtils.format(params, HTTP.UTF_8);
-        try {
-            URI uri = URIUtils.createURI("ws", getString(R.string.ws_host), 9001,
-                    "push", param, null);
-            return uri.toString();
-        } catch (URISyntaxException e) {
-            Log.e(TAG, "getWebSocketUrl", e);
-            return "";
-        }
-    }
-
-    private void connect() {
-        try {
-            mConnection.connect(getWebSocketUrl(), mHandler);
-        } catch (WebSocketException e) {
-            Log.e(TAG, "Error connect to web socket", e);
-        }
-    }
-
     private boolean isConnected() {
         return mConnection.isConnected();
-    }
-
-    private void disconnect() {
-        if (isConnected()) {
-            mConnection.disconnect();
-        }
     }
 
     private void sendMessage(String text) {

@@ -1,11 +1,16 @@
 package com.ztemt.test.client;
 
 import android.os.Bundle;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
+import android.view.Gravity;
 import android.widget.ArrayAdapter;
 
-public class MainActivity extends ActionBarActivity implements
+import com.actionbarsherlock.app.ActionBar;
+import com.actionbarsherlock.app.SherlockListActivity;
+
+import de.ankri.views.Switch;
+
+public class DevicesActivity extends SherlockListActivity implements
         ActionBar.OnNavigationListener {
 
     /**
@@ -14,10 +19,15 @@ public class MainActivity extends ActionBarActivity implements
      */
     private static final String SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
 
+    private ConnectionEnabler mConnectionEnabler;
+    private Switch mSwitch;
+
+    private DevicesAdapter mAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.devices);
 
         // Set up the action bar to show a dropdown list.
         final ActionBar actionBar = getSupportActionBar();
@@ -33,6 +43,47 @@ public class MainActivity extends ActionBarActivity implements
                                 getString(R.string.title_online),
                                 getString(R.string.title_offline),
                                 getString(R.string.title_all) }), this);
+
+        // Set up the switch
+        final int padding = getResources().getDimensionPixelSize(
+                R.dimen.action_bar_switch_padding);
+        mSwitch = new Switch(this);
+        mSwitch.setPadding(0, 0, padding, 0);
+
+        mConnectionEnabler = new ConnectionEnabler(this, mSwitch);
+
+        mAdapter = new DevicesAdapter(this);
+        setListAdapter(mAdapter);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        getSupportActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM,
+                ActionBar.DISPLAY_SHOW_CUSTOM);
+        getSupportActionBar().setCustomView(mSwitch, new ActionBar.LayoutParams(
+                ActionBar.LayoutParams.WRAP_CONTENT,
+                ActionBar.LayoutParams.WRAP_CONTENT,
+                Gravity.CENTER_VERTICAL | Gravity.RIGHT));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mConnectionEnabler.resume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mConnectionEnabler.pause();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        getSupportActionBar().setDisplayOptions(0, ActionBar.DISPLAY_SHOW_CUSTOM);
+        getSupportActionBar().setCustomView(null);
     }
 
     @Override
@@ -55,12 +106,13 @@ public class MainActivity extends ActionBarActivity implements
     public boolean onNavigationItemSelected(int position, long id) {
         // When the given dropdown item is selected, show its contents in the
         // container view.
-        DevicesFragment fragment = new DevicesFragment();
+        /*DevicesFragment fragment = new DevicesFragment();
         Bundle args = new Bundle();
         args.putInt(DevicesFragment.ARG_SECTION_NUMBER, position);
         fragment.setArguments(args);
         getSupportFragmentManager().beginTransaction().replace(R.id.container,
-                fragment).commit();
+                fragment).commit();*/
+        Log.d("ConnectionManager", "position=" + position);
         return true;
     }
 }

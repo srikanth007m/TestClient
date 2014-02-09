@@ -14,15 +14,14 @@ public class DevicesAdapter extends BaseAdapter {
 
     private Context mContext;
     private List<Device> mDevices = new ArrayList<Device>();
-    private int mState;
+    private int mState = STATE_UNKNOWN;
 
     public static final int STATE_ONLINE  = 0;
     public static final int STATE_OFFLINE = 1;
     public static final int STATE_UNKNOWN = 2;
 
-    public DevicesAdapter(Context context, int state) {
+    public DevicesAdapter(Context context) {
         mContext = context;
-        mState = state;
     }
 
     @Override
@@ -57,6 +56,10 @@ public class DevicesAdapter extends BaseAdapter {
         holder.text1.setText(device.deviceId);
         holder.text2.setText(device.ip);
         return convertView;
+    }
+
+    public void setState(int state) {
+        mState = state;
     }
 
     public void update(List<MessageEntity> entities) {
