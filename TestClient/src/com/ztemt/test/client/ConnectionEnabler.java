@@ -45,11 +45,11 @@ public class ConnectionEnabler implements CompoundButton.OnCheckedChangeListener
         }
     };
 
-    public ConnectionEnabler(Context context, Switch switch_) {
+    public ConnectionEnabler(Context context, Switch switch_, ConnectionManager cm) {
         mContext = context;
         mSwitch = switch_;
         mValidListener = false;
-        mCM = ConnectionManager.getInstance(context);
+        mCM = cm;
         context.startService(new Intent(context, ConnectionService.class));
     }
 
@@ -59,14 +59,12 @@ public class ConnectionEnabler implements CompoundButton.OnCheckedChangeListener
         mValidListener = true;
         LocalBroadcastManager.getInstance(mContext).registerReceiver(mReceiver,
                 new IntentFilter(ConnectionManager.ACTION_STATE_CHANGED));
-        mCM.bindService();
     }
 
     public void pause() {
         mSwitch.setOnCheckedChangeListener(null);
         mValidListener = false;
         LocalBroadcastManager.getInstance(mContext).unregisterReceiver(mReceiver);
-        mCM.unbindService();
     }
 
     public void setSwitch(Switch switch_) {

@@ -31,19 +31,18 @@ public class ConnectionManager {
     private static final String TAG = "ConnectionManager";
 
     public static final String ACTION_STATE_CHANGED = "com.ztemt.test.client.action.STATE_CHANGED";
-    public static final String ACTION_MSG_RECEIVED = "com.ztemt.test.client.action.MSG_RECEIVED";
     public static final String EXTRA_STATE = "state";
-    public static final String EXTRA_TEXT = "text";
 
     public static final int STATE_CONNECTING     = 1;
     public static final int STATE_CONNECT_FAILED = 2;
     public static final int STATE_CONNECT_OPENED = 3;
     public static final int STATE_CONNECT_CLOSED = 4;
 
-    private static ConnectionManager sInstance;
-    private Context mContext;
-    private WebSocketConnection mConnection;
+    private static WebSocketConnection sConnection;
     private boolean mBound = false;
+
+    private Context mContext;
+    private ConnectionListener mConnectionListener;
 
     /** Defines callbacks for service binding, passed to bindService() */
     private ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -56,7 +55,7 @@ public class ConnectionManager {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             LocalBinder binder = (LocalBinder) service;
-            mConnection = binder.getService().getConnection();
+            sConnection = binder.getService().getConnection();
             mBound = true;
             broadcastStateChanged();
         }
@@ -67,36 +66,30 @@ public class ConnectionManager {
         @Override
         public void onOpen() {
             broadcastStateChanged(STATE_CONNECT_OPENED);
-            sendMessage(new MessageEntity(MessageConstants.MSG_REQUEST_DEVICES));
+            if (mConnectionListener != null) {
+                mConnectionListener.onConnected();
+            }
         }
 
         @Override
         public void onTextMessage(String payload) {
             Log.d(TAG, "Recv " + payload);
-            broadcastMessageReceived(payload);
+            if (mConnectionListener != null) {
+                mConnectionListener.onMessage(new MessageEntity(payload));
+            }
         }
 
         @Override
         public void onClose(int code, String reason) {
             broadcastStateChanged(STATE_CONNECT_CLOSED);
+            if (mConnectionListener != null) {
+                mConnectionListener.onDisconnected();
+            }
         }
     };
 
-    private ConnectionManager(Context context) {
+    public ConnectionManager(Context context) {
         mContext = context;
-    }
-
-    private void setContext(Context context) {
-        mContext = context;
-    }
-
-    public static ConnectionManager getInstance(Context context) {
-        if (sInstance == null) {
-            sInstance = new ConnectionManager(context);
-        } else {
-            sInstance.setContext(context);
-        }
-        return sInstance;
     }
 
     public void bindService() {
@@ -114,17 +107,17 @@ public class ConnectionManager {
     }
 
     public boolean isConnected() {
-        if (mBound) {
-            return mConnection.isConnected();
+        if (sConnection != null) {
+            return sConnection.isConnected();
         }
         return false;
     }
 
     public void connect() {
-        if (mBound) {
+        if (sConnection != null) {
             try {
                 broadcastStateChanged(STATE_CONNECTING);
-                mConnection.connect(getWebSocketUrl(), mHandler);
+                sConnection.connect(getWebSocketUrl(), mHandler);
             } catch (WebSocketException e) {
                 broadcastStateChanged(STATE_CONNECT_FAILED);
                 Log.e(TAG, "Failed connect to ws", e);
@@ -133,15 +126,19 @@ public class ConnectionManager {
     }
 
     public void disconnect() {
-        if (mBound && isConnected()) {
-            mConnection.disconnect();
+        if (isConnected()) {
+            sConnection.disconnect();
         }
     }
 
     public void sendMessage(MessageEntity entity) {
-        if (mBound && isConnected()) {
-            mConnection.sendTextMessage(entity.toString());
+        if (isConnected()) {
+            sConnection.sendTextMessage(entity.toString());
         }
+    }
+
+    public void setMessageListener(ConnectionListener listener) {
+        mConnectionListener = listener;
     }
 
     private void broadcastStateChanged(int state) {
@@ -152,11 +149,6 @@ public class ConnectionManager {
     private void broadcastStateChanged() {
         broadcastStateChanged(isConnected() ? STATE_CONNECT_OPENED
                 : STATE_CONNECT_CLOSED);
-    }
-
-    private void broadcastMessageReceived(String text) {
-        Intent i = new Intent(ACTION_MSG_RECEIVED).putExtra(EXTRA_TEXT, text);
-        LocalBroadcastManager.getInstance(mContext).sendBroadcast(i);
     }
 
     private String getWebSocketUrl() {

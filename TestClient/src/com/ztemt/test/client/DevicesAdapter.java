@@ -14,11 +14,6 @@ public class DevicesAdapter extends BaseAdapter {
 
     private Context mContext;
     private List<Device> mDevices = new ArrayList<Device>();
-    private int mState = STATE_UNKNOWN;
-
-    public static final int STATE_ONLINE  = 0;
-    public static final int STATE_OFFLINE = 1;
-    public static final int STATE_UNKNOWN = 2;
 
     public DevicesAdapter(Context context) {
         mContext = context;
@@ -58,50 +53,28 @@ public class DevicesAdapter extends BaseAdapter {
         return convertView;
     }
 
-    public void setState(int state) {
-        mState = state;
-    }
-
-    public void update(List<MessageEntity> entities) {
+    public void update(List<Device> devices) {
         mDevices.clear();
-        for (MessageEntity entity : entities) {
-            Device device = new Device();
-            device.online = entity.getInt("online", 0) == 1;
-            if (mState == STATE_ONLINE && device.online
-                    || mState == STATE_OFFLINE && !device.online
-                    || mState == STATE_UNKNOWN) {
-                device.deviceId = entity.getString("deviceId", "0");
-                device.platform = entity.getString("platform", "Unknown");
-                device.version = entity.getString("version", "");
-                device.model = entity.getString("model", "");
-                device.baseband = entity.getString("baseband", "");
-                device.build = entity.getString("build", "");
-                device.address = entity.getString("address", "");
-                device.user = entity.getString("user", "");
-                device.buildDate = entity.getString("buildDate", "");
-                device.ip = entity.getString("ip", "");
-                mDevices.add(device);
-            }
-        }
+        mDevices.addAll(devices);
         notifyDataSetChanged();
-    }
-
-    class Device {
-        String deviceId;
-        String platform;
-        String version;
-        String model;
-        String baseband;
-        String build;
-        String address;
-        String user;
-        String buildDate;
-        String ip;
-        boolean online;
     }
 
     private class ViewHolder {
         TextView text1;
         TextView text2;
     }
+}
+
+class Device {
+    String deviceId;
+    String platform;
+    String version;
+    String model;
+    String baseband;
+    String build;
+    String address;
+    String user;
+    String buildDate;
+    String ip;
+    boolean online;
 }

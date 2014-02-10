@@ -1,9 +1,13 @@
 package com.ztemt.test.client;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Gravity;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.ListView;
 
 import com.actionbarsherlock.app.ActionBar;
 import com.actionbarsherlock.app.SherlockListActivity;
@@ -11,7 +15,7 @@ import com.actionbarsherlock.app.SherlockListActivity;
 import de.ankri.views.Switch;
 
 public class DevicesActivity extends SherlockListActivity implements
-        ActionBar.OnNavigationListener {
+        ActionBar.OnNavigationListener, ConnectionListener {
 
     /**
      * The serialization (saved instance state) Bundle key representing the
@@ -19,10 +23,13 @@ public class DevicesActivity extends SherlockListActivity implements
      */
     private static final String SELECTED_NAVIGATION_ITEM = "selected_navigation_item";
 
+    private ConnectionManager mConnectionManager;
     private ConnectionEnabler mConnectionEnabler;
     private Switch mSwitch;
 
+    private static List<MessageEntity> sEntities = new ArrayList<MessageEntity>();
     private DevicesAdapter mAdapter;
+    private int mPosition = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +57,9 @@ public class DevicesActivity extends SherlockListActivity implements
         mSwitch = new Switch(this);
         mSwitch.setPadding(0, 0, padding, 0);
 
-        mConnectionEnabler = new ConnectionEnabler(this, mSwitch);
+        mConnectionManager = new ConnectionManager(this);
+        mConnectionManager.setMessageListener(this);
+        mConnectionEnabler = new ConnectionEnabler(this, mSwitch, mConnectionManager);
 
         mAdapter = new DevicesAdapter(this);
         setListAdapter(mAdapter);
@@ -71,12 +80,14 @@ public class DevicesActivity extends SherlockListActivity implements
     protected void onResume() {
         super.onResume();
         mConnectionEnabler.resume();
+        mConnectionManager.bindService();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         mConnectionEnabler.pause();
+        mConnectionManager.unbindService();
     }
 
     @Override
@@ -106,13 +117,100 @@ public class DevicesActivity extends SherlockListActivity implements
     public boolean onNavigationItemSelected(int position, long id) {
         // When the given dropdown item is selected, show its contents in the
         // container view.
-        /*DevicesFragment fragment = new DevicesFragment();
-        Bundle args = new Bundle();
-        args.putInt(DevicesFragment.ARG_SECTION_NUMBER, position);
-        fragment.setArguments(args);
-        getSupportFragmentManager().beginTransaction().replace(R.id.container,
-                fragment).commit();*/
-        Log.d("ConnectionManager", "position=" + position);
+        mPosition = position;
+        filterDevices();
         return true;
+    }
+
+    @Override
+    public void onConnected() {
+        requestDevices();
+    }
+
+    @Override
+    public void onMessage(MessageEntity message) {
+        if (message.getType() == MessageConstants.MSG_REQUEST_DEVICES) {
+            sEntities.clear();
+            sEntities.addAll(message.getArray("devices"));
+            filterDevices();
+        }
+    }
+
+    @Override
+    public void onDisconnected() {
+        sEntities.clear();
+        filterDevices();
+    }
+
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        List<MessageEntity> entities = new ArrayList<MessageEntity>();
+        MessageEntity msg1 = new MessageEntity(7001);
+        msg1.putInt("id", 1);
+        msg1.putString("params", "20000");
+        MessageEntity msg2 = new MessageEntity(7002);
+        msg2.putInt("id", 2);
+        msg2.putString("params", "10000 10");
+        MessageEntity msg3 = new MessageEntity(7003);
+        msg3.putInt("id", 3);
+        msg3.putString("params", "10000 10");
+        MessageEntity msg4 = new MessageEntity(7004);
+        msg4.putInt("id", 4);
+        msg4.putString("params", "10000 10");
+        MessageEntity msg5 = new MessageEntity(7005);
+        msg5.putInt("id", 5);
+        msg5.putString("params", "10000 10");
+        MessageEntity msg6 = new MessageEntity(7006);
+        msg6.putInt("id", 6);
+        msg6.putString("params", "10000 10");
+        MessageEntity msg7 = new MessageEntity(7007);
+        msg7.putInt("id", 7);
+        msg7.putString("params", "10000 10");
+        MessageEntity msg8 = new MessageEntity(7008);
+        msg8.putInt("id", 8);
+        msg8.putString("params", "--ei times 10");
+
+        entities.add(msg1);
+        entities.add(msg2);
+        entities.add(msg3);
+        entities.add(msg4);
+        entities.add(msg5);
+        entities.add(msg6);
+        entities.add(msg7);
+        entities.add(msg8);
+
+        MessageEntity entity = new MessageEntity(MessageConstants.MSG_PUBLISH_TASK);
+        entity.putString("deviceId", mAdapter.getItem(position).deviceId);
+        entity.putBoolean("update", true);
+        entity.putArray("tests", entities);
+        mConnectionManager.sendMessage(entity);
+    }
+
+    private void filterDevices() {
+        List<Device> devices = new ArrayList<Device>();
+        for (MessageEntity entity : sEntities) {
+            Device device = new Device();
+            device.online = entity.getInt("online", 0) == 1;
+            if (mPosition == 0 && device.online || mPosition == 1
+                    && !device.online || mPosition == 2) {
+                device.deviceId = entity.getString("deviceId", "0");
+                device.platform = entity.getString("platform", "Unknown");
+                device.version = entity.getString("version", "");
+                device.model = entity.getString("model", "");
+                device.baseband = entity.getString("baseband", "");
+                device.build = entity.getString("build", "");
+                device.address = entity.getString("address", "");
+                device.user = entity.getString("user", "");
+                device.buildDate = entity.getString("buildDate", "");
+                device.ip = entity.getString("ip", "");
+                devices.add(device);
+            }
+        }
+        mAdapter.update(devices);
+    }
+
+    private void requestDevices() {
+        MessageEntity message = new MessageEntity(MessageConstants.MSG_REQUEST_DEVICES);
+        mConnectionManager.sendMessage(message);
     }
 }
